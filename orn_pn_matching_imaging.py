@@ -206,9 +206,10 @@ class AntennaLobe():
 
     def __init__(self, folder='./', filename='', ch_pn=1):
         # Initialize antenna lobe mask file
-        almask_fns = (glob.glob(folder + os.path.sep + filename + '*almask.nrrd'))
+        almask_fns = (glob.glob(folder + os.path.sep + filename + '-almask.nrrd'))
         if len(almask_fns):
             mask_, _ = nrrd.read(almask_fns[0])
+            self.fn = almask_fns[0]
             self.almask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
             self.ncad = []
             self.Y, self.X, self.Z = self.almask.shape
@@ -216,7 +217,7 @@ class AntennaLobe():
             self.almask = None
 
         # Initialize pn mask file
-        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '*pnmask.nrrd'))
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pnmask.nrrd'))
         if len(pnmask_fns):
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pnmask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
@@ -225,18 +226,18 @@ class AntennaLobe():
 
         # Initialize pn dendrite mask file
         self.pndenmask = [None, None]
-        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '*pndenmask-l.nrrd'))
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask-l.nrrd'))
         if len(pnmask_fns):
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pndenmask[0] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
-        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '*pndenmask-r.nrrd'))
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask-r.nrrd'))
         if len(pnmask_fns):
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
 
         # Initialize tif file
         if ch_pn is not None:
-            fn = (glob.glob(folder + os.path.sep + filename + '*.tif'))[0]
+            fn = (glob.glob(folder + os.path.sep + filename + '.tif'))[0]
             tif_ = tiff.imread(fn)
             tif = np.swapaxes(np.swapaxes(tif_.T, 0, 1), 2, 3)[:, :, :, ch_pn]
             self.tif = tif
@@ -320,7 +321,7 @@ class AntennaLobe():
                 break
 
     def calculate_pn_centroid_info(self):
-        pnmask = self.pnmask
+        pnmask = self.pnmask 
         self.pn[0] = None
         self.pn[1] = None
         for i in range(2):
@@ -345,7 +346,7 @@ class AntennaLobe():
                 theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab)/2))
 
                 zs_inncad = self.almask[int(y_pnc_p), int(x_pnc_p), :]                      # more complicated, accounting for which top layer it is
-                idxs = np.where(zs_inncad[z0:] == 0)[0]
+                idxs = np.where(zs_inncad[z0:] == 0)[0] 
                 if len(idxs):           # ncad scenario not suitable for complicated computation
                     z_out = idxs[0] + z0
                     if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
@@ -362,25 +363,25 @@ class AntennaLobe():
                 self.pn[side] = PN(x_pnc, y_pnc, z_pnc, d)
 
     def calculate_pnden_info(self):
-        pnmask = self.pnmask
+        pnmask = self.pnmask 
         self.ds_pnden = [[], []]
         for i_pn in range(2):
-            pnmask_bool = (pnmask == i_pn + 1)
+            pnmask_bool = (pnmask == i_pn + 1) & (self.almask > 0) # delete point outside?
             if pnmask_bool.sum():
                 sig = self.tif * pnmask_bool
                 sig_sum = np.sum(sig)
                 x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
                 side = 0 if (x_pnc_p < self.X / 2.) else 1
                 if self.pndenmask[side] is not None:
-                    pndenmask_bool = (self.pndenmask[side] > 1)
+                    pndenmask_bool = (self.pndenmask[side] > 1) 
                     sig = pnmask_bool * pndenmask_bool
                     ds_ = []
-                    for z in np.arange(self.ncadz[1][0], self.ncadz[1][1] + 1):
+                    for z in np.arange(self.ncadz[side][0], self.ncadz[side][1] + 1):
                         if np.sum(sig[:, :, z]):
-                            ys_p, xs_p = np.nonzero(sig[:, :, z])  # notice flip of x and y axis here
+                            ys_p, xs_p = np.nonzero(sig[:, :, z]) #.astype(int)  # notice flip of x and y axis here
                             xs = xs_p * self.xf
                             ys = ys_p * self.yf
-                            z0_, z1_ = z, z - 1
+                            (z0_, z1_) = (z, z + 1) if self.ncad[side][z-1] is None else (z, z - 1)
                             z0, z1 = (z0_, z1_) if (self.ncad[side][z0_].ab > self.ncad[side][z1_].ab) else (z1_, z0_)
                             theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab) / 2))
                             for i in range(len(xs)):
@@ -388,8 +389,8 @@ class AntennaLobe():
                                     (self.ncad[side][z].xb - xs[i]) ** 2 + (self.ncad[side][z].yb - ys[i]) ** 2))
 
                                 # more complicated, accounting for which top layer it is, also with interpolation
-                                zs_inncad = self.almask[int(ys_p[i]), int(xs_p[i]), :]
-                                idxs = np.where(zs_inncad[z0:] == 0)[0]
+                                zs_inncad = self.almask[int(ys_p[i]), int(xs_p[i]), :] 
+                                idxs = np.where(zs_inncad[z0+1:] == 0)[0] 
                                 if len(idxs):  # ncad scenario not suitable for complicated computation
                                     z_out = idxs[0] + z0
                                     if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
@@ -410,7 +411,8 @@ class AntennaLobe():
 
 class AntennaLobe_vertical():
 
-    def __init__(self, folder='./', filename='', lobe_side=0, ch_ORN=0, ch_NCad=1, ch_PN=2, N=100, N_newXY=500, invert_z=False, ):
+    def __init__(self, folder='./', filename='', lobe_side=0, ch_ORN=0, ch_NCad=1, ch_PN=2, N=100, N_newXY=500,
+                 almask_multiz=False, invert_z=False, ):
         ## In tif and vertical plane, x and y axes corresponds to VERTICAL and HORIZONTAL axes.
         ## In X Y Z and ellipse related x y, it's the traditional x-horizontal, y-inverted vertical definition
         ## lobe_side = 0 left, 1 right
@@ -420,6 +422,7 @@ class AntennaLobe_vertical():
         self.N_newXY = N_newXY
         self.ch_O, self.ch_N, self.ch_P = ch_ORN, ch_NCad, ch_PN
         self.invert_z = invert_z
+        self.almask_multiz = almask_multiz
 
         # all-channel signals
         fn = (glob.glob(folder + os.path.sep + filename + '*.tif'))[0]
@@ -456,7 +459,11 @@ class AntennaLobe_vertical():
         self.open()
 
     def open(self):
-        self.open_almask()
+        if self.almask_multiz:
+            self.open_almask_multiz()
+        else:
+            self.open_almask()
+
         if self.flag_findmask:
             # mask out the unwanted noise signal from ORN and PN channels
             if self.ORNmask_out is not None:
@@ -497,6 +504,43 @@ class AntennaLobe_vertical():
                     self.x0, self.y0, self.ap, self.bp, self.e, self.phi = cart_to_pol(coeffs)
                     # self.almask, self.z_mask = almask, (z-self.z_extra)
                     self.almask_2d, self.z_mask = almask, z
+                    self.flag_findmask = 1
+                    break
+            if self.flag_findmask:
+                break
+        if self.flag_findmask:
+            self.xas = np.linspace(self.x0 + self.ap * np.cos(self.phi), self.x0 - self.ap * np.cos(self.phi), self.N)
+            self.yas = np.linspace(self.y0 + self.ap * np.sin(self.phi), self.y0 - self.ap * np.sin(self.phi), self.N)
+
+    def open_almask_multiz(self):
+        # search bottom up, only look at the first positive mask as ncad mask
+        self.flag_findmask = 0
+        zs = np.unique(np.where(self.almask > 0)[2])
+
+        # first loop to calculate which z plane has the largest ncad mask
+        z_maxncad = None
+        n_max = 0
+        for z in zs:
+            almask = self.almask[:, :, z].T
+            X_center = int(self.X / 2)
+            n = np.sum(almask[:, X_center:]) if self.lobe_side else np.sum(almask[:, :X_center])
+            if n > n_max:
+                n_max = n
+                z_maxncad = z
+
+        if z_maxncad is not None:
+            almask = self.almask[:, :, z_maxncad].T
+            contours = measure.find_contours(almask, level=0)
+            for i in range(len(contours)):
+                ct = contours[i]
+                xb = ct[:, 1]
+                yb = ct[:, 0]
+                if (self.lobe_side & (np.nanmean(xb) > self.X / 2)) or ((not self.lobe_side) & (np.nanmean(xb) < self.X / 2)):
+                    coeffs = fit_ellipse(xb, yb)
+                    self.xb, self.yb = xb, yb
+                    self.x0, self.y0, self.ap, self.bp, self.e, self.phi = cart_to_pol(coeffs)
+                    # self.almask, self.z_mask = almask, (z-self.z_extra)
+                    self.almask_2d, self.z_mask = almask, z_maxncad
                     self.flag_findmask = 1
                     break
         if self.flag_findmask:
