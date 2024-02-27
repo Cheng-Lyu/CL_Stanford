@@ -8,13 +8,14 @@ import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 from scipy.ndimage import map_coordinates
 from skimage import measure
-import os, random, math, copy, glob, nrrd
+import os, random, math, copy, glob, nrrd, re, csv
 from matplotlib import animation
 
 from IPython import display
 from scipy import ndimage
 from PIL import Image
 from PIL.TiffTags import TAGS
+import SimpleITK as sitk
 mpl.rcParams['animation.ffmpeg_path'] = '../ffmpeg'
 
 
@@ -192,6 +193,153 @@ def get_recs_Vertical(genotype, parent_folder='./', multifolders=False, **kwargs
                 recs.append(rec)
     return recs
 
+def get_recs_BinaryAL(genotype, parent_folder='./', csv_first=False):
+    recs = []
+
+    if os.path.exists(parent_folder) and os.path.isdir(parent_folder):
+        fns = glob.glob(parent_folder + os.path.sep + genotype + '.csv')
+
+        if csv_first and len(fns):
+            fn = fns[0]
+            file = open(fn, 'r')
+            data_ori = list(csv.reader(file))
+            data_ori = np.array(data_ori[1:])
+            file.close()
+            data = data_ori[:, 1:].reshape((data_ori.shape[0] * 2, 2)).astype(float)    # now data shape is (2 x n hemisphere)
+
+            for i in range(data.shape[0]):
+                if (data[i][0] >= 0) & (data[i][1] >= 0):
+                    recs.append(BinaryAL(genotype, data_ori[int(i/2)][0], (i+1)%2, data[i][0], data[i][1]))
+
+        else:
+            file_list = os.listdir(parent_folder)
+            file_groups = {}
+            number_pattern = r'-(\d+)-'
+            for file in file_list:
+                if file.endswith(".nrrd"):
+                    match = re.search(number_pattern, file)
+                    if match:
+                        number = int(match.group(1))
+                        if number not in file_groups:
+                            file_groups[number] = []
+                        file_groups[number].append(file)
+            # for number, files in file_groups.items():
+            #     print(f"Number {number}: {files}")
+
+            csv_fn = os.path.join(parent_folder, f'{genotype}.csv')
+            with open(csv_fn, mode='w', newline='') as csv_file:
+                fieldnames = ["brain", "total_overlap_%PN_left", "total_overlap_%ORN_left", "total_overlap_%PN_right",
+                              "total_overlap_%ORN_right"]
+                writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+                writer.writeheader()
+
+                for number, files in file_groups.items():
+                    image_paths = {"-ORNmask_in.nrrd": None, "-ORNmask.nrrd": None, "-PNmask_in.nrrd": None,
+                                   "-PNmask.nrrd": None, "-PNmask_l.nrrd": None, "-PNmask_r.nrrd": None}
+                    for file in files:
+                        for ext in image_paths.keys():
+                            if ext in file:
+                                image_paths[ext] = os.path.join(parent_folder, file)
+                    # print(image_paths)
+                    # Because PN density sometimes differ a lot between left and right brain, we need to deal with it
+                    ORNmask_in = sitk.ReadImage(image_paths['-ORNmask_in.nrrd'])
+                    ORNmask = sitk.ReadImage(image_paths['-ORNmask.nrrd'])
+                    PNmask_in = sitk.ReadImage(image_paths['-PNmask_in.nrrd'])
+                    PNmask_l = sitk.ReadImage(image_paths['-PNmask_l.nrrd']) if image_paths['-PNmask_l.nrrd'] \
+                        else  sitk.ReadImage(image_paths['-PNmask.nrrd'])
+                    PNmask_r = sitk.ReadImage(image_paths['-PNmask_r.nrrd']) if image_paths['-PNmask_r.nrrd'] \
+                        else sitk.ReadImage(image_paths['-PNmask.nrrd'])
+
+                    brain = f"{number}"
+                    # Create ORN_overlap image
+                    ORN_overlap = np.zeros_like(sitk.GetArrayFromImage(ORNmask_in))
+                    ORN_overlap[(sitk.GetArrayFromImage(ORNmask) > 0) & (sitk.GetArrayFromImage(ORNmask_in) > 0)] = 10
+                    split_point = ORN_overlap.shape[2] // 2  # Find the midpoint of the x-axis
+                    ORN_overlap_left = ORN_overlap[:, :, :split_point]
+                    ORN_overlap_right = ORN_overlap[:, :, split_point:]
+
+                    # Create PN_overlap image
+                    PN_overlap_l = np.zeros_like(sitk.GetArrayFromImage(PNmask_in))
+                    PN_overlap_r = np.zeros_like(sitk.GetArrayFromImage(PNmask_in))
+                    PN_overlap_l[(sitk.GetArrayFromImage(PNmask_l) > 0) & (sitk.GetArrayFromImage(PNmask_in) > 0)] = 10
+                    PN_overlap_r[(sitk.GetArrayFromImage(PNmask_r) > 0) & (sitk.GetArrayFromImage(PNmask_in) > 0)] = 10
+                    PN_overlap_left = PN_overlap_l[:, :, :split_point]
+                    PN_overlap_right = PN_overlap_r[:, :, split_point:]
+
+                    # Calculate the total overlap image
+                    total_overlap_left = np.zeros_like(copy.copy(ORN_overlap_left))
+                    total_overlap_left[(ORN_overlap_left == 10) & (PN_overlap_left == 10)] = 10
+                    total_overlap_right =np.zeros_like(copy.copy(ORN_overlap_right))
+                    total_overlap_right[(ORN_overlap_right == 10) & (PN_overlap_right == 10)] = 10
+
+
+
+
+                    # if all(image_paths.values()):
+                    #     images = {ext: sitk.ReadImage(image_path) for ext, image_path in image_paths.items()}
+                    #     ORNmask_in = images["-ORNmask_in.nrrd"]
+                    #     ORNmask = images["-ORNmask.nrrd"]
+                    #     PNmask_in = images["-PNmask_in.nrrd"]
+                    #     PNmask = images["-PNmask.nrrd"]
+                    #
+                    # brain = f"{number}"
+                    # # Create ORN_overlap image
+                    # ORN_overlap = np.zeros_like(sitk.GetArrayFromImage(ORNmask_in))
+                    # ORN_overlap[(sitk.GetArrayFromImage(ORNmask) > 0) & (sitk.GetArrayFromImage(ORNmask_in) > 0)] = 10
+                    #
+                    # # Create PN_overlap image
+                    # PN_overlap = np.zeros_like(sitk.GetArrayFromImage(PNmask_in))
+                    # PN_overlap[(sitk.GetArrayFromImage(PNmask) > 0) & (sitk.GetArrayFromImage(PNmask_in) > 0)] = 10
+                    #
+                    # # Calculate the total overlap image
+                    # total_overlap = np.zeros_like(sitk.GetArrayFromImage(ORNmask_in))
+                    # total_overlap[(ORN_overlap == 10) & (PN_overlap == 10)] = 10
+                    #
+                    # # Split the existing ORN_overlap, PN_overlap, and total_overlap images into left and right halves
+                    # split_point = ORN_overlap.shape[2] // 2  # Find the midpoint of the x-axis
+                    # ORN_overlap_left = ORN_overlap[:, :, :split_point]
+                    # ORN_overlap_right = ORN_overlap[:, :, split_point:]
+                    # PN_overlap_left = PN_overlap[:, :, :split_point]
+                    # PN_overlap_right = PN_overlap[:, :, split_point:]
+                    # total_overlap_left = total_overlap[:, :, :split_point]
+                    # total_overlap_right = total_overlap[:, :, split_point:]
+
+
+
+
+
+
+                    # Calculate the areas and percentages for the left and right halves
+                    total_orn_area_left = np.sum(ORN_overlap_left == 10)
+                    total_pn_area_left = np.sum(PN_overlap_left == 10)
+                    total_overlap_area_left = np.sum(total_overlap_left == 10)
+                    total_orn_area_right = np.sum(ORN_overlap_right == 10)
+                    total_pn_area_right = np.sum(PN_overlap_right == 10)
+                    total_overlap_area_right = np.sum(total_overlap_right == 10)
+
+                    # Calculate percentages for the left and right halves
+                    flag_left = (total_pn_area_left > 0) & (total_orn_area_left > 0)
+                    flag_right = (total_pn_area_right > 0) & (total_orn_area_right > 0)
+                    total_overlap_percent_pn_left = (total_overlap_area_left / total_pn_area_left) * 100 if flag_left > 0 else -1
+                    total_overlap_percent_orn_left = (total_overlap_area_left / total_orn_area_left) * 100 if flag_left > 0 else -1
+                    total_overlap_percent_pn_right = (total_overlap_area_right / total_pn_area_right) * 100 if flag_right > 0 else -1
+                    total_overlap_percent_orn_right = (total_overlap_area_right / total_orn_area_right) * 100 if flag_right > 0 else -1
+
+                    writer.writerow({
+                        "brain": brain,
+                        "total_overlap_%PN_left": total_overlap_percent_pn_left,
+                        "total_overlap_%ORN_left": total_overlap_percent_orn_left,
+                        "total_overlap_%PN_right": total_overlap_percent_pn_right,
+                        "total_overlap_%ORN_right": total_overlap_percent_orn_right,})
+                    if flag_left:
+                        recs.append(
+                            BinaryAL(genotype, brain, True, total_overlap_percent_pn_left, total_overlap_percent_orn_left))
+                    if flag_right:
+                        recs.append(
+                            BinaryAL(genotype, brain, False, total_overlap_percent_pn_right, total_overlap_percent_orn_right))
+
+    return recs
+
 class Ellipse():
     def __init__(self, xb, yb):
         coeffs = fit_ellipse(xb, yb)
@@ -226,11 +374,13 @@ class AntennaLobe():
 
         # Initialize pn dendrite mask file
         self.pndenmask = [None, None]
-        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask-l.nrrd'))
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask.nrrd')
+                      + glob.glob(folder + os.path.sep + filename + '-pndenmask-l.nrrd'))
         if len(pnmask_fns):
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pndenmask[0] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
-        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask-r.nrrd'))
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask.nrrd')
+                      + glob.glob(folder + os.path.sep + filename + '-pndenmask-r.nrrd'))
         if len(pnmask_fns):
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
@@ -267,6 +417,9 @@ class AntennaLobe():
         if (self.pnmask is not None) & (self.tif is not None):
             self.calculate_pn_centroid_info()
             self.calculate_pnden_info()
+
+        if (self.ornmask is not None) & (self.tif is not None):
+            self.calculate_ornpnoverlap_info()
 
     def add_ncad_to_all_layers(self):
         almask = self.almask
@@ -363,12 +516,12 @@ class AntennaLobe():
                 self.pn[side] = PN(x_pnc, y_pnc, z_pnc, d)
 
     def calculate_pnden_info(self):
-        pnmask = self.pnmask 
+        pnmask = self.pnmask
         self.ds_pnden = [[], []]
         for i_pn in range(2):
             pnmask_bool = (pnmask == i_pn + 1) & (self.almask > 0) # delete point outside?
             if pnmask_bool.sum():
-                sig = self.tif * pnmask_bool
+                sig = self.tif * pnmask_bool  # weighed mean
                 sig_sum = np.sum(sig)
                 x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
                 side = 0 if (x_pnc_p < self.X / 2.) else 1
@@ -667,6 +820,14 @@ class AntennaLobe_vertical():
             lobe_side = (np.nanmean(idxss[1]) > (tif_.shape[1] / 2)).astype(int)
             self.zs_mask[lobe_side] = idxss[2][0]
 
+class BinaryAL():
+    def __init__(self, genotype, num_brain, left_brain, overlap_PN, overlap_ORN):
+        self.gt = genotype
+        self.num_brain = num_brain
+        self.left_brain = left_brain
+        self.overlap_ORN = overlap_ORN
+        self.overlap_PN = overlap_PN
+
 
 
 # test plots--basic
@@ -729,7 +890,7 @@ def plot_single_verticalsection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], 
     # imgG = imgs[RGB[1]][::-1, :] + imgs[RGB[2]][::-1, :] if RGB[1] < len(chs) else np.zeros_like(imgs[0])
     # imgB = imgs[RGB[2]][::-1, :] if RGB[2] < len(chs) else np.zeros_like(imgs[0])
     _ = plt.imshow(img_RGB, aspect='auto')
-    plt.title(rec.lobe_side)
+    plt.title(rec.fn)
 
 def plot_single_verticalsection_maxiprojection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], istep_range=[45,55],
                                                window_halfwidth_ratio=1.5):
@@ -809,6 +970,23 @@ def get_yss_from_recss(recss, rs_lim=[.5,.6], zero_baseline=False, **kwargs):
         yss.append(ys)
 
     return yss, ts, ns
+
+
+
+
+# plots
+def get_pnden2surface(fn, folder, ch_pn=0, bins=np.linspace(0, 40, 40), **kwargs):
+    recs = get_recs_AntennaLobe(fn, folder, ch_pn=ch_pn, **kwargs)
+    ys = []
+    for rec in recs:
+        for side in range(2):
+            if rec.pn[side]:
+                hist_den, bin_edges = np.histogram(rec.ds_pnden[side], bins=bins, density=True)
+                x_edges = (bin_edges[1:] + bin_edges[:-1]) / 2
+                ys.append(hist_den)
+    return x_edges, ys, recs
+
+
 
 
 
@@ -1067,6 +1245,232 @@ def makemovie_verticalAL_2mv(rec, chs, ch_heatmap, chs_dist, RGB_chs=[2,0,1], dl
         if nlines == 3:
             dline3.set_data(rs, sig3 / np.nanmax(sig3))
         time_text.set_text('%i/100' % (i_frame + 1))
+
+        return fig,
+
+    anim = animation.FuncAnimation(fig, animate, frames=Nframes, interval=t_itv_ms, blit=True)
+
+    if showinline:
+        video = anim.to_html5_video()
+        html = display.HTML(video)
+        display.display(html)
+        plt.close()
+    else:
+        writergif = animation.FFMpegWriter(fps=video_fps)
+        anim.save(moviename + '.mp4', writer=writergif)
+
+def makemovie_verticalAL_2mv_short(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1],  RGB_factors_maxi=[1,1,1],
+                             Nframes=100, video_fps=12, window_halfwidth_ratio=1.5, showinline=False,
+                                   moviename='moviename', dpi=100, fs=8):
+    t_itv_ms = 1000 / video_fps
+    istep = 0
+    fig_x = 3
+    fig_y = 3
+
+    # setup axes
+    ph.set_fontsize(fs)
+    window_halfwidth = window_halfwidth_ratio * rec.bp
+    zx_ratio = rec.Z * rec.zf / (2 * window_halfwidth * rec.xf)
+    fig = plt.figure(1, [fig_x, fig_y], dpi=dpi)
+    gs0 = gridspec.GridSpec(1, 1)
+    gs0.update(left=0.01, right=0.44, wspace=0)
+    ax0 = plt.subplot(gs0[0, 0])
+
+    x = fig_x * (0.72 - 0.36) * zx_ratio / fig_y
+    gs1 = gridspec.GridSpec(1, 1)
+    gs1.update(left=0.45, right=0.99, bottom=0.5 * (1 - x), top=0.5 * (1 + x), wspace=0)
+    ax1 = plt.subplot(gs1[0, 0])
+
+    # plot
+    # ax0
+    imgs = []
+    for ch_ in range(3):
+        if RGB_chs[ch_] in chs:
+            img_ = np.nanmax(rec.tifs[:, :, :, RGB_chs[ch_]], axis=-1)
+            img_ = img_ / np.max(img_)
+        else:
+            img_ = np.zeros_like(rec.tifs[:,:, 0, 0])
+        imgs.append(img_)
+    img_RGB = np.dstack([imgs[0] * RGB_factors_maxi[0], imgs[1] * RGB_factors_maxi[1], imgs[2] * RGB_factors_maxi[2]])
+    ax0.imshow(img_RGB)
+    line0, = ax0.plot([], [], c='white', ls='--')
+    ax0.set_xlim([0, rec.X])
+    ax0.set_ylim([0, rec.Y])
+    ax0.set_xticks([])
+    ax0.set_yticks([])
+    ax0.invert_yaxis()  # must be stated after set_ylim
+
+    # ax1
+    # fig = plt.figure(1, [figwidth, figwidth * zx_ratio])
+    imgs, _ = rec.get_vertical_img(chs, istep, window_halfwidth_ratio)
+    imgs_RGB = []
+    for ch_ in range(3):
+        if RGB_chs[ch_] in chs:
+            seq = [i for i in range(len(chs)) if chs[i] == RGB_chs[ch_]][0]
+            imgs_RGB.append(imgs[seq][::-1, :])
+        else:
+            imgs_RGB.append(np.zeros_like(imgs[0]))
+    ones = np.full_like(imgs[0], 1)
+    img_RGB = np.dstack([np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
+                         np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
+    img = ax1.imshow(img_RGB, aspect='auto')
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
+    # plot each frame
+    def animate(i):
+        i_frame = i
+        istep = i_frame
+
+        x0_, y0_ = rec.xas[istep], rec.yas[istep]
+        xs_ = np.linspace(x0_ - window_halfwidth * np.sin(rec.phi), x0_ + window_halfwidth * np.sin(rec.phi), rec.N)
+        ys_ = np.linspace(y0_ + window_halfwidth * np.cos(rec.phi), y0_ - window_halfwidth * np.cos(rec.phi), rec.N)
+        line0.set_data(xs_, ys_)
+
+        imgs, _ = rec.get_vertical_img(chs, istep, window_halfwidth_ratio)
+        imgs_RGB = []
+        for ch_ in range(3):
+            if RGB_chs[ch_] in chs:
+                seq = [i for i in range(len(chs)) if chs[i] == RGB_chs[ch_]][0]
+                imgs_RGB.append(imgs[seq][::-1, :])
+            else:
+                imgs_RGB.append(np.zeros_like(imgs[0]))
+
+        ones = np.full_like(imgs[0], 1)
+        img_RGB = np.dstack(
+            [np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
+             np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
+        img.set_data(img_RGB)
+
+
+        return fig,
+
+    anim = animation.FuncAnimation(fig, animate, frames=Nframes, interval=t_itv_ms, blit=True)
+
+    if showinline:
+        video = anim.to_html5_video()
+        html = display.HTML(video)
+        display.display(html)
+        plt.close()
+    else:
+        writergif = animation.FFMpegWriter(fps=video_fps)
+        anim.save(moviename + '.mp4', writer=writergif)
+
+def makemovie_verticalAL_2mv_short_panel1(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1],  RGB_factors_maxi=[1,1,1],
+                             Nframes=100, video_fps=12, window_halfwidth_ratio=1.5, showinline=False,
+                                   moviename='moviename', dpi=100, fs=8):
+    t_itv_ms = 1000 / video_fps
+    istep = 0
+    fig_x = 3
+    fig_y = 3
+
+    # setup axes
+    ph.set_fontsize(fs)
+    window_halfwidth = window_halfwidth_ratio * rec.bp
+    fig = plt.figure(1, [fig_x, fig_y], dpi=dpi)
+    gs0 = gridspec.GridSpec(1, 1)
+    gs0.update(wspace=0)
+    ax0 = plt.subplot(gs0[0, 0])
+
+    # plot
+    # ax0
+    imgs = []
+    for ch_ in range(3):
+        if RGB_chs[ch_] in chs:
+            img_ = np.nanmax(rec.tifs[:, :, :, RGB_chs[ch_]], axis=-1)
+            img_ = img_ / np.max(img_)
+        else:
+            img_ = np.zeros_like(rec.tifs[:,:, 0, 0])
+        imgs.append(img_)
+    img_RGB = np.dstack([imgs[0] * RGB_factors_maxi[0], imgs[1] * RGB_factors_maxi[1], imgs[2] * RGB_factors_maxi[2]])
+    ax0.imshow(img_RGB[:,:512,:])
+    line0, = ax0.plot([], [], c='white', ls='--')
+    ax0.set_xlim([0, 512])
+    ax0.set_ylim([0, rec.Y])
+    ax0.set_xticks([])
+    ax0.set_yticks([])
+    ax0.invert_yaxis()  # must be stated after set_ylim
+
+
+    # plot each frame
+    def animate(i):
+        i_frame = i
+        istep = i_frame
+
+        x0_, y0_ = rec.xas[istep], rec.yas[istep]
+        xs_ = np.linspace(x0_ - window_halfwidth * np.sin(rec.phi), x0_ + window_halfwidth * np.sin(rec.phi), rec.N)
+        ys_ = np.linspace(y0_ + window_halfwidth * np.cos(rec.phi), y0_ - window_halfwidth * np.cos(rec.phi), rec.N)
+        line0.set_data(xs_, ys_)
+
+
+        return fig,
+
+    anim = animation.FuncAnimation(fig, animate, frames=Nframes, interval=t_itv_ms, blit=True)
+
+    if showinline:
+        video = anim.to_html5_video()
+        html = display.HTML(video)
+        display.display(html)
+        plt.close()
+    else:
+        writergif = animation.FFMpegWriter(fps=video_fps)
+        anim.save(moviename + '.mp4', writer=writergif)
+
+def makemovie_verticalAL_2mv_short_panel2(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1],  RGB_factors_maxi=[1,1,1],
+                             Nframes=100, video_fps=12, window_halfwidth_ratio=1.5, showinline=False,
+                                   moviename='moviename', dpi=100, fs=8):
+    t_itv_ms = 1000 / video_fps
+    istep = 0
+    fig_x = 4
+    fig_y = 3
+
+    # setup axes
+    ph.set_fontsize(fs)
+    window_halfwidth = window_halfwidth_ratio * rec.bp
+    zx_ratio = rec.Z * rec.zf / (2 * window_halfwidth * rec.xf)
+    fig = plt.figure(1, [fig_x, fig_y], dpi=dpi)
+    x = fig_x * (1 - 0) * zx_ratio / fig_y
+    gs1 = gridspec.GridSpec(1, 1)
+    gs1.update(bottom=0.5 * (1 - x), top=0.5 * (1 + x), wspace=0)
+    ax1 = plt.subplot(gs1[0, 0])
+
+
+    # ax1
+    imgs, _ = rec.get_vertical_img(chs, istep, window_halfwidth_ratio)
+    imgs_RGB = []
+    for ch_ in range(3):
+        if RGB_chs[ch_] in chs:
+            seq = [i for i in range(len(chs)) if chs[i] == RGB_chs[ch_]][0]
+            imgs_RGB.append(imgs[seq][::-1, :])
+        else:
+            imgs_RGB.append(np.zeros_like(imgs[0]))
+    ones = np.full_like(imgs[0], 1)
+    img_RGB = np.dstack([np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
+                         np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
+    img = ax1.imshow(img_RGB, aspect='auto')
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+
+    # plot each frame
+    def animate(i):
+        i_frame = i
+        istep = i_frame
+
+        imgs, _ = rec.get_vertical_img(chs, istep, window_halfwidth_ratio)
+        imgs_RGB = []
+        for ch_ in range(3):
+            if RGB_chs[ch_] in chs:
+                seq = [i for i in range(len(chs)) if chs[i] == RGB_chs[ch_]][0]
+                imgs_RGB.append(imgs[seq][::-1, :])
+            else:
+                imgs_RGB.append(np.zeros_like(imgs[0]))
+
+        ones = np.full_like(imgs[0], 1)
+        img_RGB = np.dstack(
+            [np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
+             np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
+        img.set_data(img_RGB)
+
 
         return fig,
 
