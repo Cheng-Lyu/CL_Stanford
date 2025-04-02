@@ -7,6 +7,10 @@ from matplotlib import rcParams
 import os, random, math, copy
 
 
+
+
+
+
 # helper function for analyzing seq data
 
 def get_glomtypes_from_seqss(seqss, datatype_orn):
@@ -395,6 +399,7 @@ def plot_expr_afo_gloms_onmap(seqss, mm, gene='Ten-m', glom_list=[], stain_dict=
     idx_ = int(mwidth/2)
     mm = mm[:,idx_:,:]
     cmap = ph.DReds if datatype_orn else ph.GnBls
+    # cmap = ph.GnBls
     axis_projection = 2 if z_projection else 0
     glom_xys = []
     for iglom, glom_ in enumerate(glom_list):
@@ -414,6 +419,7 @@ def plot_expr_afo_gloms_onmap(seqss, mm, gene='Ten-m', glom_list=[], stain_dict=
         M = M.T[::-1,:]
     M[np.isnan(M)] = -.1
     cmax = np.ndarray.max(M)
+    # cmin = np.ndarray.min(M)
 
     # plot
     if not len(axs):
@@ -514,7 +520,7 @@ CSMs = ['18w','2mit','5-HT2B','7B2','Acer','Acp62F','Actbeta','AdamTS-A','Adgf-A
         'beat-IIIb','beat-IIIc','beat-IV','beat-Vb','beat-Vc','beat-VI','beat-VII','beta3GalTII','bnl','boi','boly',
         'boss','botv','brn','Bsg','bt','btl','Btnd','C1GalTA','C901','Cad74A','Cad86C','Cad87A','Cad88C','Cad89D',
         'Cad96Ca','Cad96Cb','Cad99C','CadN','CadN2','Cals','Capa','CapaR','caps','CCAP','CCAP-R','CCHa1-R','CCHa2-R',
-        'CCKLR-17D1','CCKLR-17D3','Ccn','Cda4','Cda5','Cda9','cDIP','Cep97','CG10005','CG10182','CG10183','CG10307',
+        'CCKLR-17D1','CCKLR-17D3','Ccn','Cda4','Cda5','Cda9','cDIP','Cep97', 'Cht2','CG10005','CG10182','CG10183','CG10307',
         'CG10345','CG10359','CG10481','CG10483','CG10650','CG10651','CG10663','CG10702','CG10725','CG10731','CG1077',
         'CG11099','CG11318','CG11353','CG11357','CG11374','CG11377','CG11425','CG11426','CG11437','CG11438','CG11635',
         'CG11807','CG11977','CG12004','CG12009','CG12290','CG12484','CG12594','CG12716','CG12746','CG12860','CG12861',
@@ -564,7 +570,7 @@ CSMs = ['18w','2mit','5-HT2B','7B2','Acer','Acp62F','Actbeta','AdamTS-A','Adgf-A
         'mthl9','Mtp','Muc11A','Muc68Ca','Muc68D','Muc68E','Mur29B','Mur2B','Mur89F','mys','N','nahoda','Ndg','ndl',
         'neo','nes','NetA','NetB','Neto','NimA','NimB2','NimB4','NimC1','NimC2','NimC4','ninaD','NLaz','Nlg1','Nlg2',
         'Nlg3','Nlg4','nolo','nompA','nord','Npc2a','NPF','Nplp1','Nplp2','Nplp3','Nplp4','Nrg','Nrk','nrm','Nrt',
-        'Nrx-1','Nrx-IV','NT1','nyo','obst-B','obst-H','Octbeta1R','Octbeta2R','Octbeta3R','otk','otk2','oxt','oys',
+        'Nrx-1','Nrx-IV','NT1','nyo','obst-B','obst-H','Octbeta1R','Octbeta2R','Octbeta3R', 'Ostgamma','otk','otk2','oxt','oys',
         'Pdf','Pdfr','pes','Pex23','Phlpp','pio','pip','PK1-R','PK2-R1','PK2-R2','PlexA','PlexB','plum','por','pot',
         'ppk12','Ppn','Proc','Proc-R','Ptp10D','Ptp4E','Ptp52F','Ptp69D','Ptp99A','put','Pvf1','Pvf2','Pvf3','Pvr',
         'pwn','Pxn','pyr','qsm','RanGAP','rasp','Rcd2','rdo','Reck','Ret','rgn','rk','robo1','robo2','robo3','Ror',
@@ -580,7 +586,8 @@ CSMs = ['18w','2mit','5-HT2B','7B2','Acer','Acp62F','Actbeta','AdamTS-A','Adgf-A
         'Tsp42Eo','Tsp42Ep','Tsp42Eq','Tsp42Er','Tsp47F','Tsp5D','Tsp66A','Tsp66E','Tsp68C','Tsp74F','Tsp86D','Tsp96F',
         'Tsp97E','ttv','tutl','twin','tyn','TyrR','TyrRII','uif','unc-5','Unc-89','upd1','Vang','verm','vn','wb','wdp',
         'wg','wgn','wit','Wnt10','Wnt2','Wnt4','Wnt5','Wnt6','wntD','wrapper','wry','Wsck','wun','wun2','yl','zormin',
-        'zye',]
+        'zye',
+        'Piezo','CG4587','Lip4','Lsp1gamma','GILT1','Nep3','CG14446','Dop1R1']
 glomid_list = ['VA1d_R', 'VA1d_L', 'VA1v_R', 'VA1v_L', 'DA1_R', 'DA1_L', 'DA3_R', 'DA3_L', 'DL3_R', 'DL3_L',
           'VA6_R', 'VA6_L', 'DA4l_R', 'DA4l_L', 'DA4m_R', 'DA4m_L', 'D_R', 'D_L', 'DA2_R', 'DA2_L',
           'DC3_R', 'DC3_L', 'DC1_R', 'DC1_L', 'DC4_R', 'DC4_L', 'DC2_R', 'DC2_L', 'DM3_R', 'DM3_L',

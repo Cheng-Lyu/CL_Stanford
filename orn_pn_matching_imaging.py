@@ -165,6 +165,122 @@ def gaussian_filter_withnan(ys, sigma=1.0, truncate=4.0):
 
     return VV / WW
 
+def project_point_onto_line(P, d, Q):
+    # P, d, Q should be numpy arrays or lists representing points in 3D space
+    # P, Example point on the line
+    # d, Example direction vector of the line
+    # Q, Example point to project onto the line
+
+    P = np.array(P)
+    d = np.array(d)
+    Q = np.array(Q)
+
+    # Calculate projection
+    PQ = Q - P
+    projection_length = np.dot(PQ, d) / np.dot(d, d)
+    projection = P + projection_length * d
+
+    return projection
+
+gt2pf = {
+    # TT-DA1_v
+    'DA1-DA1-w1118':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-w1118/',
+    'DA1-v-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-w1118/',
+    'DA1-DA1-TT':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE-ConRNAi-FiliOE-TenaRNAi-Ptp10DRNAi/',
+    'DA1-DA1-TT-female':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-TT-female/',
+    'DA1-DA1-TT-male':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-TT-male/',
+    'DA1_DA1-18wOE': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-18wEP/',
+    'DA1_DA1-v8010': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-v8010/',
+    'DA1_DA1-FiliOE': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-FiliOE/',
+    'DA1_DA1-KirreOE': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-KirreOE/',
+    'DA1_DA1-v17898': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-v17898/',
+    'DA1_DA1-kek1OE': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE/',
+    'DA1_DA1-TenmOE': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-TenmEP/',
+    'DA1_DA1-bdsc28746': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-bdsc28746/',
+    'DA1_DA1-bdsc29439': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-bdsc29439/',
+    'DA1_DA1-A2': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-ConRNAi-TenaRNAi/',
+    'DA1_DA1-R2': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE-FiliOE/',
+    'DA1_DA1-R4':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE-FiliOE-18wOE-KirreOE/',
+    'DA1_DA1-RsX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-ConRNAi-TenaRNAi-Ptp10DRNAi/',
+    'DA1_DA1-RnX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE-ConRNAi-FiliOE-TenaRNAi/',
+    'DA1_DA1-AX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-kek1OE-FiliOE-Ptp10DRNAi39001/',
+    'DA1_DA1-kek1X': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-FiliOE-ConRNAi-TenaRNAi-Ptp10DRNAi/',
+    'DA1_DA1-TenaX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-FiliOE-ConRNAi-kek1OE-Ptp10DRNAi/',
+    'DA1_DA1-FiliX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-TenaRNAi-ConRNAi-kek1OE-Ptp10DRNAi/',
+    'DA1_DA1-ConX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_DA1-TenaRNAi-FiliOE-kek1OE-Ptp10DRNAi/',
+
+    'DA1-v-TT':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE-ConRNAi-FiliOE-TenaRNAi-Ptp10DRNAi/',
+    'DA1-v-TT-female':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-TT-female/',
+    'DA1-v-TT-male':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-TT-male/',
+    'DA1_v-bdsc29439':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-bdsc29439/',
+    'DA1_v-TenmOE':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-TenmEP/',
+    'DA1_v-v17898':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-v17898/',
+    'DA1_v-bdsc28746':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-bdsc28746/',
+    'DA1_v-18wOE':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-18w/',
+    'DA1_v-FiliOE':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-FiliOE/',
+    'DA1_v-KirreOE':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-KirreOE/',
+    'DA1_v-kek1OE':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE/',
+    'DA1_v-v8010':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-v8010/',
+    'DA1_v-A2': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-ConRNAi-TenaRNAi/',
+    'DA1_v-R2':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE-FiliOE/',
+    'DA1_v-R4':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE-FiliOE-18wOE-KirreOE/',
+    'DA1_v-RsX':'../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-ConRNAi-TenaRNAi-Ptp10DRNAi/',
+    'DA1_v-RnX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE-ConRNAi-FiliOE-TenaRNAi/',
+    'DA1_v-AX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-kek1OE-FiliOE-Ptp10DRNAi39001/',
+    'DA1_v-ConX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-TenaRNAi-FiliOE-kek1OE-Ptp10DRNAi/',
+    'DA1_v-FiliX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-TenaRNAi-ConRNAi-kek1OE-Ptp10DRNAi/',
+    'DA1_v-kek1X': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-FiliOE-ConRNAi-TenaRNAi-Ptp10DRNAi/',
+    'DA1_v-TenaX': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/TT-DA1_v-FiliOE-ConRNAi-kek1OE-Ptp10DRNAi',
+    'DA1_v-TT-Kir': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/DA1_v-TT-Kir_tdT/',
+    'DA1_v-TT-csC': '../../../1_Data/confocal/2_ORN_exps/TT/TT-DA1_ORN/DA1_v-TT-csC_tdT/',
+
+
+    # TT-VA1d
+    'd_d-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/d_d-w1118/',
+    'd_v-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/Va1d_Va1v_Cross0/',
+    'd_DC3-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DC3/VA1d_DC3_W1118/',
+    'd_DL3-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DL3/Va1d-DL3-W1118/',
+    'd_DA1-w1118': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DA1/Va1d_DA1_Cross0/',
+    'd_d-TT-d_v': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-d_d-kek1OE-ConRNAi-Ptp10Dv8010-Sema2bRNAi/',
+    'd_d-TT-d_v-Kirre': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-d_d-KirreOE-kek1OE-ConRNAi-Ptp10DRNAi-Sema2bRNAi/',
+    'd_v-TT': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/TT-d_VA1v-kek1OE-ConRNAi-Ptp10Dv8010-Sema2bRNAi/',
+    'd_v-TT-Kirre': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/d_v-TT-KirreOE-kek1OE-ConRNAi-klgOE-Sema2bRNAi/',
+    'd_DC3-TT-d_v': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DC3/TT-d_DC3-kek1OE-ConRNAi-Ptp10Dv8010-Sema2bRNAi/',
+    'd_DL3-TT-d_v': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DL3/TT-d_DL3-kek1OE-ConRNAi-Ptp10Dv8010-Sema2bRNAi/',
+    'd_DA1-TT-d_v': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DA1/TT-d_DA1-kek1OE-ConRNAi-Ptp10Dv8010-Sema2bRNAi/',
+    'd_d-TT-d_DC3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-d_d-KirreOE-kek1OE-TmRNAi29390-klgOE-Ptp10DRNAi/',
+    'd_v-TT-d_DC3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/TT-d_v-KirreOE-kek1OE-TmRNAi29390-Ptp10DRNAi-klgOE/',
+    'd_DC3-TT': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DC3/TT-d_DC3-KirreOE-kek1OE-TmRNAi29390-Ptp10DRNAi-klgOE/',
+    'd_DL3-TT-d_DC3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DL3/TT-d_DL3-KirreOE-kek1OE-TmRNAi29390-Ptp10DRNAi-klgOE/',
+    'd_d-TT-d_DL3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-VA1d_VA1d-TaOE-Sema2bRNAi/',
+    'd_v-TT-d_DL3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/TT-d_v-TenaOE-klgOE-Sema2bRNAi',
+    'd_DC3-TT-d_DL3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DC3/TT-d_DC3-TenaOE-klgOE-Sema2bRNAi/',
+    'd_DL3-TT':'../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DL3/TT-traj-VA1d-DL3_37H08-TenaOE-Sema2bRNAi/',
+    'd_DA1-TT-d_DL3': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DA1/TT-d_DA1-TenaOE-klgOE-Sema2bRNAi/',
+    'd-DA1-p24': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DA1/TT-d_DA1-TaOEp24-TmRNAish-klgOE-Sema2bRNAi/',
+    'd_d-d_v_notraj': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-d_d-kek1OE-ConRNAi-Ptp10DRNAi/',
+    'd_d-d_DL3_notraj': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/d-d/TT-d_d-TenaOE/',
+
+    'd-v-cross5': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/VA1v/Va1d_Va1V_Cross5/',
+    'd-DL3-cross7': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DL3/Va1d_DL3_Cross7/',
+    'd-DA1-cross4': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DA1/Va1d_DA1_Cross4/',
+
+    'd-DC3-13': '../../../1_Data/confocal/2_ORN_exps/TT/TT-VA1d_ORN/DC3/TT-VA1d_DC3-kek1OE-TmRNAi_29390-klgOE-Ptp10Dv8010/',
+    # Traj
+    'F14-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/F14-adult/',
+    'F15-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/F15-adult/',
+    'F16-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/F16-adult/',
+    'J0-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/J0-adult/',
+    'J13-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/J13-adult/',
+    'J16-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/J16-adult/',
+    'G0-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/G0-adult/',
+    'G1-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/G1-adult/',
+    'G11-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/G11-adult/',
+    'K0-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/K0-adult/',
+    'K2-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/K2-adult/',
+    'K11-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/K11-adult/',
+    'K13-adult': '../../../1_Data/confocal/2_ORN_exps/Dimension_Reduction/Traj-combinatory_coding/Perturbation/K13-adult/',
+        }
 
 # objects
 
@@ -189,6 +305,20 @@ def get_recs_Vertical(genotype, parent_folder='./', multifolders=False, **kwargs
     for fn in fns:
         for lobe_side in [1,0]:
             rec = AntennaLobe_vertical(folder='./', filename=fn[:-4], lobe_side=lobe_side, **kwargs)
+            if rec.flag_findmask:
+                recs.append(rec)
+    return recs
+
+def get_recs_combo(genotype, parent_folder='./', multifolders=False, **kwargs):
+    recs = []
+    if multifolders:
+        fns = glob.glob(parent_folder + os.path.sep + genotype + os.path.sep + genotype + '*.tif')
+    else:
+        fns = glob.glob(parent_folder + os.path.sep + genotype + '*.tif')
+    for fn in fns:
+        for lobe_side in [1,0]:
+            print(fn, lobe_side)
+            rec = AntennaLobe_combo(folder='./', filename=fn[:-4], lobe_side=lobe_side, **kwargs)
             if rec.flag_findmask:
                 recs.append(rec)
     return recs
@@ -385,6 +515,27 @@ class AntennaLobe():
             mask_, _ = nrrd.read(pnmask_fns[0])
             self.pndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
 
+        # Initialize orn mask file - added
+        ornmask_fns = (glob.glob(folder + os.path.sep + filename + '-ornmask.nrrd'))
+        if len(ornmask_fns):
+            mask_, _ = nrrd.read(ornmask_fns[0])
+            self.ornmask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        else:
+            self.ornmask = None
+
+        # Initialize orn dendrite mask file - added
+        self.orndenmask = [None, None]
+        orndenmask_fns = (glob.glob(folder + os.path.sep + filename + '-orndenmask.nrrd')
+                          + glob.glob(folder + os.path.sep + filename + '-orndenmask-l.nrrd'))
+        if len(orndenmask_fns):
+            mask_, _ = nrrd.read(orndenmask_fns[0])
+            self.orndenmask[0] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        orndenmask_fns = (glob.glob(folder + os.path.sep + filename + '-orndenmask.nrrd')
+                          + glob.glob(folder + os.path.sep + filename + '-orndenmask-r.nrrd'))
+        if len(orndenmask_fns):
+            mask_, _ = nrrd.read(orndenmask_fns[0])
+            self.orndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+
         # Initialize tif file
         if ch_pn is not None:
             fn = (glob.glob(folder + os.path.sep + filename + '.tif'))[0]
@@ -417,7 +568,6 @@ class AntennaLobe():
         if (self.pnmask is not None) & (self.tif is not None):
             self.calculate_pn_centroid_info()
             self.calculate_pnden_info()
-
         if (self.ornmask is not None) & (self.tif is not None):
             self.calculate_ornpnoverlap_info()
 
@@ -562,10 +712,60 @@ class AntennaLobe():
                                 ds_.append(d_)
                     self.ds_pnden[side] = ds_
 
+    def calculate_ornpnoverlap_info(self):
+        pnmask = self.pnmask
+        ornmask = self.ornmask
+        self.ds_ornpnoverlap = [[], []]
+        for i_pn in range(2):
+            pnmask_bool = (pnmask == i_pn + 1) & (self.almask > 0) # delete point outside?
+            ornmask_bool = (ornmask == i_pn + 1) & (self.almask > 0) #added
+            if pnmask_bool.sum():
+                sig = self.tif * pnmask_bool  # weighed mean
+                sig_sum = np.sum(sig)
+                x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
+                side = 0 if (x_pnc_p < self.X / 2.) else 1
+                if self.pndenmask[side] is not None:
+                    pndenmask_bool = (self.pndenmask[side] > 1)
+                    orndenmask_bool = (self.orndenmask[side] > 1) #added
+                    sig = (pnmask_bool * pndenmask_bool) * (ornmask_bool * orndenmask_bool) #added
+                    ds_ = []
+                    for z in np.arange(self.ncadz[side][0], self.ncadz[side][1] + 1):
+                        if np.sum(sig[:, :, z]):
+                            ys_p, xs_p = np.nonzero(sig[:, :, z]) #.astype(int)  # notice flip of x and y axis here
+                            xs = xs_p * self.xf
+                            ys = ys_p * self.yf
+                            (z0_, z1_) = (z, z + 1) if self.ncad[side][z-1] is None else (z, z - 1)
+                            z0, z1 = (z0_, z1_) if (self.ncad[side][z0_].ab > self.ncad[side][z1_].ab) else (z1_, z0_)
+                            theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab) / 2))
+                            for i in range(len(xs)):
+                                d0 = np.min(np.sqrt(
+                                    (self.ncad[side][z].xb - xs[i]) ** 2 + (self.ncad[side][z].yb - ys[i]) ** 2))
+
+                                # more complicated, accounting for which top layer it is, also with interpolation
+                                zs_inncad = self.almask[int(ys_p[i]), int(xs_p[i]), :]
+                                idxs = np.where(zs_inncad[z0+1:] == 0)[0]
+                                if len(idxs):  # ncad scenario not suitable for complicated computation
+                                    z_out = idxs[0] + z0
+                                    if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
+                                        d_vertical = (self.ncadz[side][1] - z0) * self.zf
+                                    else:  # pixel is outside some layer of ncad
+                                        d0_ = np.min(np.sqrt(
+                                            (self.ncad[side][z_out - 1].xb - xs_p[i]) ** 2 + (
+                                                        self.ncad[side][z_out - 1].yb - ys_p[i]) ** 2))
+                                        tan_theta_ = self.zf / np.abs(
+                                            (self.ncad[side][z_out - 1].ab - self.ncad[side][z_out].ab) / 2)
+                                        d_vertical = d0_ * tan_theta_ + (z_out - z0 - 1) * self.zf
+                                    d_ = np.min([d0 * np.sin(theta), d_vertical])
+                                else:
+                                    d_ = np.min([d0 * np.sin(theta), (self.ncadz[side][1] - z0) * self.zf])  # simple comparison
+
+                                ds_.append(d_)
+                    self.ds_ornpnoverlap[side] = ds_
+
 class AntennaLobe_vertical():
 
     def __init__(self, folder='./', filename='', lobe_side=0, ch_ORN=0, ch_NCad=1, ch_PN=2, N=100, N_newXY=500,
-                 almask_multiz=False, invert_z=False, ):
+                 almask_multiz=False, invert_z=False, phi0=None):
         ## In tif and vertical plane, x and y axes corresponds to VERTICAL and HORIZONTAL axes.
         ## In X Y Z and ellipse related x y, it's the traditional x-horizontal, y-inverted vertical definition
         ## lobe_side = 0 left, 1 right
@@ -576,9 +776,11 @@ class AntennaLobe_vertical():
         self.ch_O, self.ch_N, self.ch_P = ch_ORN, ch_NCad, ch_PN
         self.invert_z = invert_z
         self.almask_multiz = almask_multiz
+        self.flag_findmask = 0
+        self.phi0 = phi0
 
         # all-channel signals
-        fn = (glob.glob(folder + os.path.sep + filename + '*.tif'))[0]
+        fn = (glob.glob(folder + os.path.sep + filename + '.tif'))[0]
         self.fn = fn.split('/')[-1] + ('-lobeside_%i' % lobe_side)
         tif_ = tiff.imread(fn)
         self.tifs = np.swapaxes(np.swapaxes(tif_.T, 0, 1), 2, 3)
@@ -592,21 +794,21 @@ class AntennaLobe_vertical():
             self.tifs = self.tifs[:,:,::-1,:]
 
         # NCad mask
-        almask_fn = (glob.glob(folder + os.path.sep + filename + '*almask.nrrd'))[0]
+        almask_fn = (glob.glob(folder + os.path.sep + filename + '-almask.nrrd'))[0]
         self.almask, _ = nrrd.read(almask_fn)
         if invert_z:
             self.almask = self.almask[:,:,::-1]
 
         # ORN and PN masks to exclude from signal
-        ORNmask_out_fns = glob.glob(folder + os.path.sep + filename + '*ORNmask_out*')
+        ORNmask_out_fns = glob.glob(folder + os.path.sep + filename + '-ORNmask_out*')
         self.ORNmask_out = self.getmask(ORNmask_out_fns)
-        PNmask_out_fns = glob.glob(folder + os.path.sep + filename + '*PNmask_out*')
+        PNmask_out_fns = glob.glob(folder + os.path.sep + filename + '-PNmask_out*')
         self.PNmask_out = self.getmask(PNmask_out_fns)
 
         # ORN and PN masks to include only
-        ORNmask_in_fns = glob.glob(folder + os.path.sep + filename + '*ORNmask_in*')
+        ORNmask_in_fns = glob.glob(folder + os.path.sep + filename + '-ORNmask_in*')
         self.ORNmask_in = self.getmask(ORNmask_in_fns)
-        PNmask_in_fns = glob.glob(folder + os.path.sep + filename + '*PNmask_in*')
+        PNmask_in_fns = glob.glob(folder + os.path.sep + filename + '-PNmask_in*')
         self.PNmask_in = self.getmask(PNmask_in_fns)
 
         self.open()
@@ -645,7 +847,7 @@ class AntennaLobe_vertical():
         self.flag_findmask = 0
         zs = np.unique(np.where(self.almask > 0)[2])
         for z in zs:
-            almask = self.almask[:, :, z].T
+            almask = self.almask[:, :, z].T         # NOTICE the "T" here!!!! Complete the transverse of X and Y
             contours = measure.find_contours(almask, level=0)
             for i in range(len(contours)):
                 ct = contours[i]
@@ -656,6 +858,8 @@ class AntennaLobe_vertical():
                     self.xb, self.yb = xb, yb
                     self.x0, self.y0, self.ap, self.bp, self.e, self.phi = cart_to_pol(coeffs)
                     # self.almask, self.z_mask = almask, (z-self.z_extra)
+                    if self.phi0:
+                        self.phi = self.phi0
                     self.almask_2d, self.z_mask = almask, z
                     self.flag_findmask = 1
                     break
@@ -692,6 +896,8 @@ class AntennaLobe_vertical():
                     coeffs = fit_ellipse(xb, yb)
                     self.xb, self.yb = xb, yb
                     self.x0, self.y0, self.ap, self.bp, self.e, self.phi = cart_to_pol(coeffs)
+                    if self.phi0:
+                        self.phi = self.phi0
                     # self.almask, self.z_mask = almask, (z-self.z_extra)
                     self.almask_2d, self.z_mask = almask, z_maxncad
                     self.flag_findmask = 1
@@ -752,8 +958,8 @@ class AntennaLobe_vertical():
         imgs, _ = self.get_vertical_img(chs, istep, window_halfwidth_ratio)
         window_halfwidth = window_halfwidth_ratio * self.bp
         f = self.zf / (2 * window_halfwidth * self.xf) * self.N_newXY  # ratio of the vertical vs radius dimensions
-        xv_c = self.z_mask              # new axis #1 in the vertical plane: the original z axis
-        yv_c = self.N_newXY / 2 / f            # new axis #2 in the vertical plane: the original (x, y) axis
+        xv_c = self.z_mask                      # new axis #1 in the vertical plane: the original z axis
+        yv_c = self.N_newXY / 2 / f             # new axis #2 in the vertical plane: the original (x, y) axis
         xv_ = np.arange(self.Z)
         yv_ = np.arange(self.N_newXY) / f
         # Mxv, Myv: 1st dim vertical, 2nd dim horizontal
@@ -820,6 +1026,412 @@ class AntennaLobe_vertical():
             lobe_side = (np.nanmean(idxss[1]) > (tif_.shape[1] / 2)).astype(int)
             self.zs_mask[lobe_side] = idxss[2][0]
 
+class AntennaLobe_combo():
+
+    def __init__(self, folder='./', filename='', lobe_side=0, ch_ORN=0, ch_NCad=1, ch_PN=2, N=100, N_newXY=500,
+                 almask_multiz=True, invert_z=False, ):
+        ## In tif and vertical plane, x and y axes corresponds to VERTICAL and HORIZONTAL axes.
+        ## In X Y Z and ellipse related x y, it's the traditional x-horizontal, y-inverted vertical definition
+        ## lobe_side = 0 left, 1 right
+        self.lobe_side = lobe_side
+        self.N = N          #step number of the movement along the ellipse long axis
+        self.N_newXY = N_newXY
+        self.ch_O, self.ch_N, self.ch_P = ch_ORN, ch_NCad, ch_PN
+        self.invert_z = invert_z
+        self.almask_multiz = almask_multiz
+        self.flag_findmask = 0
+
+        # Initialize antenna lobe mask file
+        almask_fns = (glob.glob(folder + os.path.sep + filename + '-almask.nrrd'))
+        if len(almask_fns):
+            mask_, _ = nrrd.read(almask_fns[0])
+            self.fn = almask_fns[0] + ('-lobeside_%i' % lobe_side)
+            self.almask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+            self.ncad = []
+            self.Y, self.X, self.Z = self.almask.shape
+        else:
+            self.almask = None
+
+        # Initialize pn mask file
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pnmask.nrrd'))
+        if len(pnmask_fns):
+            mask_, _ = nrrd.read(pnmask_fns[0])
+            self.pnmask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        else:
+            self.pnmask = None
+
+        # Initialize pn dendrite mask file
+        self.pndenmask = [None, None]
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask.nrrd')
+                      + glob.glob(folder + os.path.sep + filename + '-pndenmask-l.nrrd'))
+        if len(pnmask_fns):
+            mask_, _ = nrrd.read(pnmask_fns[0])
+            self.pndenmask[0] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        pnmask_fns = (glob.glob(folder + os.path.sep + filename + '-pndenmask.nrrd')
+                      + glob.glob(folder + os.path.sep + filename + '-pndenmask-r.nrrd'))
+        if len(pnmask_fns):
+            mask_, _ = nrrd.read(pnmask_fns[0])
+            self.pndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+
+        # Initialize orn mask file - added
+        ornmask_fns = (glob.glob(folder + os.path.sep + filename + '-ornmask.nrrd'))
+        if len(ornmask_fns):
+            mask_, _ = nrrd.read(ornmask_fns[0])
+            self.ornmask = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        else:
+            self.ornmask = None
+
+        # Initialize orn dendrite mask file - added
+        self.orndenmask = [None, None]
+        orndenmask_fns = (glob.glob(folder + os.path.sep + filename + '-orndenmask.nrrd')
+                          + glob.glob(folder + os.path.sep + filename + '-orndenmask-l.nrrd'))
+        if len(orndenmask_fns):
+            mask_, _ = nrrd.read(orndenmask_fns[0])
+            self.orndenmask[0] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+        orndenmask_fns = (glob.glob(folder + os.path.sep + filename + '-orndenmask.nrrd')
+                          + glob.glob(folder + os.path.sep + filename + '-orndenmask-r.nrrd'))
+        if len(orndenmask_fns):
+            mask_, _ = nrrd.read(orndenmask_fns[0])
+            self.orndenmask[1] = np.swapaxes(np.swapaxes(mask_.T, 0, 1), 1, 2)
+
+        # Initialize tif file
+        if ch_PN is not None:
+            fn = (glob.glob(folder + os.path.sep + filename + '.tif'))[0]
+            tif_ = tiff.imread(fn)
+            tif = np.swapaxes(np.swapaxes(tif_.T, 0, 1), 2, 3)[:, :, :, ch_PN]
+            self.tif = tif
+            self.Y, self.X, self.Z = tif.shape
+            self.pn = [0, 0]
+
+            img = Image.open(fn)
+            exifdata = img.getexif()
+            self.xf = 1. / exifdata.get(282)    # 282 is a specific number for getting the XResolution value
+            self.yf = self.xf
+            self.zf = 1
+            # Annotation: In case 282 gives the wrong info, check with the code below
+            # for tag_id in exifdata:
+            #     # get the tag name, instead of human unreadable tag id
+            #     tag = TAGS.get(tag_id, tag_id)
+            #     if tag == 'XResolution':
+            #         data = exifdata.get(tag_id)
+            #         break
+
+        else:
+            self.tif = None
+        self.open()
+
+    def open(self):
+        if self.almask is not None:
+            self.add_ncad_to_all_layers()
+            self.open_almask_multiz()
+        if self.flag_findmask:
+            if (self.pnmask is not None) & (self.tif is not None):
+                self.calculate_pn_centroid_info()
+                self.calculate_pnden_info()
+            if (self.ornmask is not None) & (self.tif is not None):
+                self.calculate_ornden_info()
+            if (self.pnmask is not None) & (self.ornmask is not None) & (self.tif is not None):
+                self.calculate_ornpnoverlap_info()
+
+    def add_ncad_to_all_layers(self):
+        almask = self.almask
+        ncad_l, ncad_r = [], []
+        for z in range(self.Z):
+            pic = almask[:,:,z]
+            contours = measure.find_contours(pic, level=0)
+            n = len(contours)
+            if n == 0:      # no NCad circle at this layer
+                ncad_l.append(None)
+                ncad_r.append(None)
+            elif n == 1:    # only one NCad circle at this layer, figure out left or right
+                ct = contours[0]
+                xb = ct[:, 1]
+                yb = ct[:, 0]
+                side = 0 if (np.mean(xb) < self.X / 2.) else 1      # 0 means left, 1 means right
+                ncad_ = Ellipse(xb*self.xf, yb*self.yf)
+                if side:
+                    ncad_l.append(None)
+                    ncad_r.append(ncad_)
+                else:
+                    ncad_l.append(ncad_)
+                    ncad_r.append(None)
+            else:           # two NCad circles at this layer
+                for i in range(2):
+                    ct = contours[i]
+                    xb = ct[:, 1]
+                    yb = ct[:, 0]
+                    ncad_ = Ellipse(xb*self.xf, yb*self.yf)
+                    if np.mean(xb) < self.X / 2.:
+                        ncad_l.append(ncad_)
+                    else:
+                        ncad_r.append(ncad_)
+        self.ncad = [ncad_l, ncad_r]
+        # calculate the top and bottom layer of the left and right NCad
+        self.ncadz = np.zeros((2,2)).astype(int)
+        for i in np.arange(self.Z):
+            if ncad_l[i] is not None:
+                self.ncadz[0][0] = i
+                break
+        for i in np.arange(self.Z)[::-1]:
+            if ncad_l[i] is not None:
+                self.ncadz[0][1] = i
+                break
+        for i in np.arange(self.Z):
+            if ncad_r[i] is not None:
+                self.ncadz[1][0] = i
+                break
+        for i in np.arange(self.Z)[::-1]:
+            if ncad_r[i] is not None:
+                self.ncadz[1][1] = i
+                break
+
+    def calculate_pn_centroid_info(self):
+        pnmask = self.pnmask
+        self.pn[0] = None
+        self.pn[1] = None
+        for i in range(2):
+            mask = (pnmask == i+1)
+            if mask.sum():
+                sig = self.tif * mask
+                # print(sig.shape)
+                sig_sum = np.sum(sig)
+                x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum   # sum axis 0, leave axis 1 as X
+                y_pnc_p = np.sum(np.sum(np.sum(sig, axis=1), axis=1) * np.arange(self.Y)) / sig_sum   # sum axis 1, leave axis 0 as X
+                z_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=0) * np.arange(self.Z)) / sig_sum
+
+                side = 0 if (x_pnc_p < self.X/2.) else 1
+                z0_ = np.floor(z_pnc_p).astype(int)
+                z1_ = np.ceil(z_pnc_p).astype(int)
+                x_pnc = x_pnc_p * self.xf
+                y_pnc = y_pnc_p * self.yf
+                z_pnc = z_pnc_p * self.zf
+                # ncad in z0 is larger than the one in z1
+                z0, z1 = (z0_, z1_) if (self.ncad[side][z0_].ab > self.ncad[side][z1_].ab) else (z1_, z0_)
+                d0 =  np.min(np.sqrt((self.ncad[side][z0].xb-x_pnc)**2+(self.ncad[side][z0].yb-y_pnc)**2))
+                theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab)/2))
+
+                zs_inncad = self.almask[int(y_pnc_p), int(x_pnc_p), :]                      # more complicated, accounting for which top layer it is
+                idxs = np.where(zs_inncad[z0:] == 0)[0]
+                if len(idxs):           # ncad scenario not suitable for complicated computation
+                    z_out = idxs[0] + z0
+                    if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
+                        d_vertical = (self.ncadz[side][1] - z0) * self.zf
+                    else:  # pixel is outside some layer of ncad
+                        d0_ = np.min(np.sqrt(
+                            (self.ncad[side][z_out - 1].xb - x_pnc) ** 2 + (self.ncad[side][z_out - 1].yb - y_pnc) ** 2))
+                        tan_theta_ = self.zf / np.abs((self.ncad[side][z_out - 1].ab - self.ncad[side][z_out].ab) / 2)
+                        d_vertical = d0_ * tan_theta_ + (z_out - z0 - 1) * self.zf
+                    d = np.min([d0 * np.sin(theta), d_vertical])
+                else:
+                    d = np.min([d0 * np.sin(theta), (self.ncadz[side][1] - z0) * self.zf])  # simple comparison
+
+                self.pn[side] = PN(x_pnc, y_pnc, z_pnc, d)
+
+    def open_almask_multiz(self):
+        # average phi from 30h APF VA1d PN data: left 2.33, right 0.88
+        # search bottom up, only look at the first positive mask as ncad mask
+        self.flag_findmask = 0
+        zs = np.unique(np.where(self.almask > 0)[2])
+
+        # first loop to calculate which z plane has the largest ncad mask
+        z_maxncad = None
+        n_max = 0
+        for z in zs:
+            almask = self.almask[:, :, z]
+            X_center = int(self.X / 2)
+            n = np.sum(almask[:, X_center:]) if self.lobe_side else np.sum(almask[:, :X_center])
+            if n > n_max:
+                n_max = n
+                z_maxncad = z
+
+        if z_maxncad is not None:
+            almask = self.almask[:, :, z_maxncad]
+            contours = measure.find_contours(almask, level=0)
+            for i in range(len(contours)):
+                ct = contours[i]
+                xb = ct[:, 1]
+                yb = ct[:, 0]
+                if (self.lobe_side & (np.nanmean(xb) > self.X / 2)) or ((not self.lobe_side) & (np.nanmean(xb) < self.X / 2)):
+                    coeffs = fit_ellipse(xb, yb)
+                    self.xb, self.yb = xb, yb
+                    self.x0, self.y0, self.ap, self.bp, self.e, self.phi = cart_to_pol(coeffs)
+                    # manually give lobe from adults a value phi, since the fitting is always bad
+                    if ('adult' in self.fn) or ('48h' in self.fn):
+                        self.phi = 0.88 if self.lobe_side else 2.33
+                    # self.almask, self.z_mask = almask, (z-self.z_extra)
+                    self.almask_2d, self.z_mask = almask, z_maxncad
+                    self.flag_findmask = 1
+                    break
+        if self.flag_findmask:
+            self.xas = np.linspace(self.x0 + self.ap * np.cos(self.phi), self.x0 - self.ap * np.cos(self.phi), self.N)
+            self.yas = np.linspace(self.y0 + self.ap * np.sin(self.phi), self.y0 - self.ap * np.sin(self.phi), self.N)
+
+    def calculate_pnden_info(self):
+        pnmask = self.pnmask
+        self.ds_pnden = []
+        for i_pn in range(2):
+            pnmask_bool = (pnmask == i_pn + 1) & (self.almask > 0) # delete point outside?
+            if pnmask_bool.sum():
+                sig = self.tif * pnmask_bool  # weighed mean
+                sig_sum = np.sum(sig)
+                x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
+                side = 0 if (x_pnc_p < self.X / 2.) else 1
+                if (side == self.lobe_side) and (self.pndenmask[side] is not None):
+                    pndenmask_bool = (self.pndenmask[side] > 1)
+
+                    ## sig contains all the pixels of PN dendrites to be quantified
+                    sig = pnmask_bool * pndenmask_bool
+                    ds, ts, ns = [], [], []
+                    for z in np.arange(self.ncadz[side][0], self.ncadz[side][1] + 1):
+                        if np.sum(sig[:, :, z]):
+                            ys_p, xs_p = np.nonzero(sig[:, :, z]) #.astype(int)  # notice flip of x and y axis here
+                            xs = xs_p * self.xf
+                            ys = ys_p * self.yf
+                            (z0_, z1_) = (z, z + 1) if self.ncad[side][z-1] is None else (z, z - 1)
+                            z0, z1 = (z0_, z1_) if (self.ncad[side][z0_].ab > self.ncad[side][z1_].ab) else (z1_, z0_)
+                            theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab) / 2))
+                            for i in range(len(xs)):
+
+                                ### distance to surface
+                                d0 = np.min(np.sqrt(
+                                    (self.ncad[side][z].xb - xs[i]) ** 2 + (self.ncad[side][z].yb - ys[i]) ** 2))
+                                # more complicated, accounting for which top layer it is, also with interpolation
+                                zs_inncad = self.almask[int(ys_p[i]), int(xs_p[i]), :]
+                                idxs = np.where(zs_inncad[z0+1:] == 0)[0]
+                                if len(idxs):  # ncad scenario not suitable for complicated computation
+                                    z_out = idxs[0] + z0
+                                    if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
+                                        d_vertical = (self.ncadz[side][1] - z0) * self.zf
+                                    else:  # pixel is outside some layer of ncad
+                                        d0_ = np.min(np.sqrt(
+                                            (self.ncad[side][z_out - 1].xb - xs_p[i]) ** 2 + (
+                                                        self.ncad[side][z_out - 1].yb - ys_p[i]) ** 2))
+                                        tan_theta_ = self.zf / np.abs(
+                                            (self.ncad[side][z_out - 1].ab - self.ncad[side][z_out].ab) / 2)
+                                        d_vertical = d0_ * tan_theta_ + (z_out - z0 - 1) * self.zf
+                                    d_ = np.min([d0 * np.sin(theta), d_vertical])
+                                else:
+                                    d_ = np.min([d0 * np.sin(theta), (self.ncadz[side][1] - z0) * self.zf])  # simple comparison
+                                ds.append(d_)
+
+                                ### istep-n and theta
+                                x, y = xs_p[i], ys_p[i]
+                                L = np.sqrt((self.xas[0] - self.xas[-1]) ** 2 + (self.yas[0] - self.yas[-1]) ** 2)
+                                d = [self.x0 - self.xas[0], self.y0 - self.yas[0]]
+                                P = [self.x0, self.y0]
+
+                                Q_ = project_point_onto_line(P, d, [x, y])
+                                xp, yp = Q_[0], Q_[1]   # x y of the projection point
+                                projection_length = np.sqrt((self.xas[0] - xp) ** 2 + (self.yas[0] - yp) ** 2)
+                                istep_ = int(np.sign(self.yas[0] - yp) * projection_length / L*100)
+                                l = np.sign(x - xp) * np.sqrt((x - xp) ** 2 + (y - yp) ** 2) * self.xf / self.zf
+                                h = z - self.ncadz[self.lobe_side][0]
+                                theta_ = np.arctan(l / h)
+                                ns.append(istep_)
+                                ts.append(theta_)
+
+                    self.ds_pnden = np.array(ds)
+                    self.ts_pnden = np.array(ts)
+                    self.ns_pnden = np.array(ns)
+                    break
+
+    def calculate_ornden_info(self):
+        ornmask = self.ornmask
+        for i_orn in range(2):
+            ornmask_bool = (ornmask == i_orn + 1)
+            if ornmask_bool.sum():
+                sig = self.tif * ornmask_bool  # weighed mean
+                sig_sum = np.sum(sig)
+                xc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
+                side = 0 if (xc_p < self.X / 2.) else 1
+                if (side == self.lobe_side) and (self.orndenmask[side] is not None):
+                    orndenmask_bool = (self.orndenmask[side] > 0)
+
+                    ## sig contains all the pixels of ORN dendrites to be quantified
+                    sig = ornmask_bool * orndenmask_bool
+                    ts, ns = [], []
+                    for z in range(self.Z):
+                        if np.sum(sig[:, :, z]):
+                            ys_p, xs_p = np.nonzero(sig[:, :, z]) #.astype(int)  # notice flip of x and y axis here
+                            for i in range(len(xs_p)):
+                                ### istep-n and theta
+                                x, y = xs_p[i], ys_p[i]
+                                L = np.sqrt((self.xas[0] - self.xas[-1]) ** 2 + (self.yas[0] - self.yas[-1]) ** 2)
+                                d = [self.x0 - self.xas[0], self.y0 - self.yas[0]]
+                                P = [self.x0, self.y0]
+
+                                Q_ = project_point_onto_line(P, d, [x, y])
+                                xp, yp = Q_[0], Q_[1]   # x y of the projection point
+                                projection_length = np.sqrt((self.xas[0] - xp) ** 2 + (self.yas[0] - yp) ** 2)
+                                istep_ = int(np.sign(self.yas[0] - yp) * projection_length / L*100)
+                                l = np.sign(x - xp) * np.sqrt((x - xp) ** 2 + (y - yp) ** 2) * self.xf / self.zf
+                                h = z - self.ncadz[self.lobe_side][0]
+                                theta_ = np.arctan(l / h)
+                                ns.append(istep_)
+                                ts.append(theta_)
+
+                    self.ts_ornden = np.array(ts)
+                    self.ns_ornden = np.array(ns)
+                    break
+
+    def calculate_ornpnoverlap_info(self):
+        pnmask = self.pnmask
+        ornmask = self.ornmask
+        self.ds_ornpnoverlap = [[], []]
+        for i_pn in range(2):
+            pnmask_bool = (pnmask == i_pn + 1) & (self.almask > 0) # delete point outside?
+            ornmask_bool = (ornmask == i_pn + 1) & (self.almask > 0) #added
+            if pnmask_bool.sum():
+                sig = self.tif * pnmask_bool  # weighed mean
+                sig_sum = np.sum(sig)
+                x_pnc_p = np.sum(np.sum(np.sum(sig, axis=0), axis=1) * np.arange(self.X)) / sig_sum
+                side = 0 if (x_pnc_p < self.X / 2.) else 1
+                if self.pndenmask[side] is not None:
+                    pndenmask_bool = (self.pndenmask[side] > 1)
+                    orndenmask_bool = (self.orndenmask[side] > 1) #added
+                    sig = (pnmask_bool * pndenmask_bool) * (ornmask_bool * orndenmask_bool) #added
+                    ds_ = []
+                    for z in np.arange(self.ncadz[side][0], self.ncadz[side][1] + 1):
+                        if np.sum(sig[:, :, z]):
+                            ys_p, xs_p = np.nonzero(sig[:, :, z]) #.astype(int)  # notice flip of x and y axis here
+                            xs = xs_p * self.xf
+                            ys = ys_p * self.yf
+                            (z0_, z1_) = (z, z + 1) if self.ncad[side][z-1] is None else (z, z - 1)
+                            z0, z1 = (z0_, z1_) if (self.ncad[side][z0_].ab > self.ncad[side][z1_].ab) else (z1_, z0_)
+                            theta = np.arctan(self.zf / ((self.ncad[side][z0].ab - self.ncad[side][z1].ab) / 2))
+                            for i in range(len(xs)):
+                                d0 = np.min(np.sqrt(
+                                    (self.ncad[side][z].xb - xs[i]) ** 2 + (self.ncad[side][z].yb - ys[i]) ** 2))
+
+                                # more complicated, accounting for which top layer it is, also with interpolation
+                                zs_inncad = self.almask[int(ys_p[i]), int(xs_p[i]), :]
+                                idxs = np.where(zs_inncad[z0+1:] == 0)[0]
+                                if len(idxs):  # ncad scenario not suitable for complicated computation
+                                    z_out = idxs[0] + z0
+                                    if z_out >= self.ncadz[side][1]:  # pixel is within the top layer of ncad
+                                        d_vertical = (self.ncadz[side][1] - z0) * self.zf
+                                    else:  # pixel is outside some layer of ncad
+                                        d0_ = np.min(np.sqrt(
+                                            (self.ncad[side][z_out - 1].xb - xs_p[i]) ** 2 + (
+                                                        self.ncad[side][z_out - 1].yb - ys_p[i]) ** 2))
+                                        tan_theta_ = self.zf / np.abs(
+                                            (self.ncad[side][z_out - 1].ab - self.ncad[side][z_out].ab) / 2)
+                                        d_vertical = d0_ * tan_theta_ + (z_out - z0 - 1) * self.zf
+                                    d_ = np.min([d0 * np.sin(theta), d_vertical])
+                                else:
+                                    d_ = np.min([d0 * np.sin(theta), (self.ncadz[side][1] - z0) * self.zf])  # simple comparison
+
+                                ds_.append(d_)
+                    self.ds_ornpnoverlap[side] = ds_
+
+
+
+
+
+
+
+
+
 class BinaryAL():
     def __init__(self, genotype, num_brain, left_brain, overlap_PN, overlap_ORN):
         self.gt = genotype
@@ -870,7 +1482,8 @@ def plot_single_maxiprojection_topdown(rec, chs, RGB_chs=[2,0,1], RGB_factors_ma
     ax0.set_yticks([])
     ax0.invert_yaxis()  # must be stated after set_ylim
 
-def plot_single_verticalsection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], istep=50, window_halfwidth_ratio=1.5):
+def plot_single_verticalsection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], istep=50, window_halfwidth_ratio=1.5,
+                                scalebar_micron=20):
     imgs, zx_ratio = rec.get_vertical_img(chs, istep, window_halfwidth_ratio=window_halfwidth_ratio)
     fig = plt.figure(1, [5, 5 * zx_ratio])
     _ = plt.xticks([])
@@ -884,16 +1497,21 @@ def plot_single_verticalsection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], 
             imgs_RGB.append(np.zeros_like(imgs[0]))
     ones = np.full_like(imgs[0], 1)
     img_RGB = np.dstack([np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
+                         # np.minimum(imgs_RGB[0] * RGB_factors[0] * 0.5, ones)])
                          np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
     # color Ncad white
     # imgR = imgs[RGB[0]][::-1, :] + imgs[RGB[2]][::-1, :] if RGB[0] < len(chs) else np.zeros_like(imgs[0])
     # imgG = imgs[RGB[1]][::-1, :] + imgs[RGB[2]][::-1, :] if RGB[1] < len(chs) else np.zeros_like(imgs[0])
     # imgB = imgs[RGB[2]][::-1, :] if RGB[2] < len(chs) else np.zeros_like(imgs[0])
     _ = plt.imshow(img_RGB, aspect='auto')
-    plt.title(rec.fn)
+    ax = plt.gca()
+    bar_length = scalebar_micron / rec.xf
+    ph.plot_x_scale_text(ax, bar_length=bar_length, text='', color='white')
+
+    plt.title(rec.fn[-20:])
 
 def plot_single_verticalsection_maxiprojection(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1], istep_range=[45,55],
-                                               window_halfwidth_ratio=1.5):
+                                               window_halfwidth_ratio=1.5, scalebar_micron=20):
     imgss = []
     for ch in chs:
         imgss.append([])
@@ -924,12 +1542,16 @@ def plot_single_verticalsection_maxiprojection(rec, chs, RGB_chs=[2,0,1], RGB_fa
     # imgG = imgs[RGB[1]][::-1, :] + imgs[RGB[2]][::-1, :] if RGB[1] < len(chs) else np.zeros_like(imgs[0])
     # imgB = imgs[RGB[2]][::-1, :] if RGB[2] < len(chs) else np.zeros_like(imgs[0])
     _ = plt.imshow(img_RGB, aspect='auto')
+    ax = plt.gca()
+    bar_length = scalebar_micron / rec.xf
+    ph.plot_x_scale_text(ax, bar_length=bar_length, text='', color='white')
 
 def plot_heatmap_distance(rec, ch_heatmap, chs_dist, cmap=ph.Greens, heatmap_only=False,
                           window_halfwidth_ratio=1.5, ntheta=27, nr=20, rmax=40, thresh=.2, sigma=1, ):
 
     Mflat, ts, rs = rec.get_Mflat(ch_heatmap, window_halfwidth_ratio=window_halfwidth_ratio, ntheta=ntheta, nr=nr, rmax=rmax, )
-    ys, ys_sm = rec.get_d_axon2ncad(chs_dist, thresh=thresh, sigma=sigma, )
+    if not heatmap_only:
+        ys, ys_sm = rec.get_d_axon2ncad(chs_dist, thresh=thresh, sigma=sigma, )
 
     # plot
     fig = plt.figure(1, (4, 4))
@@ -966,7 +1588,7 @@ def get_yss_from_recss(recss, rs_lim=[.5,.6], zero_baseline=False, **kwargs):
             y = np.nanmean(M[inds, :], axis=0)
             if zero_baseline:
                 y = y - np.nanmin(y)
-            ys.append(y / np.nansum(y))  # normalized: density
+            ys.append(y /(np.sum(y)*np.degrees(ts[-1]-ts[0])/len(ts)))  # normalized: density
         yss.append(ys)
 
     return yss, ts, ns
@@ -986,7 +1608,24 @@ def get_pnden2surface(fn, folder, ch_pn=0, bins=np.linspace(0, 40, 40), **kwargs
                 ys.append(hist_den)
     return x_edges, ys, recs
 
+def plot_bars(gts, ax, **kwargs):
 
+    xss = []
+    for i, gt in enumerate(gts):
+        recs = get_recs_BinaryAL(genotype=gt, parent_folder=gt2pf[gt], csv_first=True)
+        ys = []
+        for rec in recs:
+            ys.append(rec.overlap_ORN)
+        ys = np.array(ys)
+        xss.append(ys)
+        group_info = [[i] for i in range(len(gts))]
+
+    ph.errorbar_lc_xss(xss=xss, ax=ax, group_info=group_info, group_labels=gts, colors=['black'],
+                       ylabel='', fs=12, yticks=np.array([0, 50, 100]), ylim=[-2, 100],
+                       ro_x=45, rotate_ylabel=False,
+                       subgroup_samefly=False, legend_list=gts, show_flynum=False,
+                       show_nancol=False, **kwargs)
+    return xss
 
 
 
@@ -1264,8 +1903,8 @@ def makemovie_verticalAL_2mv_short(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1
                                    moviename='moviename', dpi=100, fs=8):
     t_itv_ms = 1000 / video_fps
     istep = 0
-    fig_x = 3
-    fig_y = 3
+    fig_x = 20
+    fig_y = 20
 
     # setup axes
     ph.set_fontsize(fs)
@@ -1299,6 +1938,9 @@ def makemovie_verticalAL_2mv_short(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1
     ax0.set_xticks([])
     ax0.set_yticks([])
     ax0.invert_yaxis()  # must be stated after set_ylim
+    bar_length = 20 / rec.xf
+    ph.plot_x_scale_text(ax0, bar_length=bar_length, text='', color='white', x_text_lefter=0.5)
+    time_text = ax0.text(64, 1, '', ha='left', va='top', c='white', clip_on=False)
 
     # ax1
     # fig = plt.figure(1, [figwidth, figwidth * zx_ratio])
@@ -1314,6 +1956,8 @@ def makemovie_verticalAL_2mv_short(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1
     img_RGB = np.dstack([np.minimum(imgs_RGB[0] * RGB_factors[0], ones), np.minimum(imgs_RGB[1] * RGB_factors[1], ones),
                          np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
     img = ax1.imshow(img_RGB, aspect='auto')
+    bar_length = 20 / rec.xf
+    ph.plot_x_scale_text(ax1, bar_length=bar_length, text='', color='white', x_text_lefter=0.5)
     ax1.set_xticks([])
     ax1.set_yticks([])
 
@@ -1342,6 +1986,7 @@ def makemovie_verticalAL_2mv_short(rec, chs, RGB_chs=[2,0,1], RGB_factors=[1,1,1
              np.minimum(imgs_RGB[2] * RGB_factors[2], ones)])
         img.set_data(img_RGB)
 
+        time_text.set_text('%i/100' % (i_frame + 1))
 
         return fig,
 
